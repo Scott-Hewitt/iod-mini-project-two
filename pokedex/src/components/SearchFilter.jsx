@@ -1,45 +1,38 @@
-import {useState} from "react";
+import React from "react";
 
-const SearchFilter = ({ onSearchChange }) => {
-    const [searchValue, setSearchValue] = useState("");
-
-    const handleSearch = () => {
-        onSearchChange(searchValue.trim().toLowerCase());
+const SearchFilter = ({ onSearch, value }) => {
+    const handleSearchChange = (e) => {
+        onSearch(e.target.value);
     };
 
     return (
-        <div>
-            <input
-                type="text"
-                placeholder="Search by name or ID..."
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                style={styles.input}
-            />
-            <button onClick={handleSearch} style={styles.button}>
-                Search
-            </button>
+        <div className="card filter-card h-100 border-0">
+            <div className="card-body">
+                <h5 className="card-title filter-label">Search Pokémon</h5>
+                <div className="input-group">
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Search by name or ID"
+                        value={value}
+                        onChange={handleSearchChange}
+                    />
+                    {value && (
+                        <button
+                            className="btn btn-outline-secondary"
+                            type="button"
+                            onClick={() => onSearch("")}
+                        >
+                            ×
+                        </button>
+                    )}
+                </div>
+                <small className="text-muted mt-2 d-block">
+                    Enter Pokémon name or ID number
+                </small>
+            </div>
         </div>
     );
-};
-
-const styles = {
-    input: {
-        margin: "10px",
-        padding: "8px 12px",
-        fontSize: "16px",
-        borderRadius: "4px",
-        border: "1px solid #ddd",
-    },
-    button: {
-        padding: "8px 16px",
-        fontSize: "16px",
-        borderRadius: "4px",
-        border: "none",
-        backgroundColor: "#007bff",
-        color: "#fff",
-        cursor: "pointer",
-    },
 };
 
 export default SearchFilter;

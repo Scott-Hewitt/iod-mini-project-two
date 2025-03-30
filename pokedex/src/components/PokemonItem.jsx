@@ -1,115 +1,158 @@
-import React, { useEffect, useState } from "react";
-import { fetchPokemonDetails } from "../services/pokeApi.jsx";
+import React, { useState, useEffect } from "react";
 
-const getTypeIconUrl = (type) => `/assets/types/${type}.png`;
-
-const PokemonItem = ({ pokemon, onClick }) => {
+const PokemonItem = ({ pokemon }) => {
     const [pokemonData, setPokemonData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [description, setDescription] = useState("");
 
     useEffect(() => {
-        const loadPokemonDetails = async () => {
-            const data = await fetchPokemonDetails(pokemon.url);
-            setPokemonData(data);
-        };
-        loadPokemonDetails();
-    }, [pokemon.url]);
+        const fetchPokemonDetails = async () => {
+            try {
+                const response = await fetch(pokemon.url);
+                const data = await response.json();
+                setPokemonData(data);
+                try {
+                    const speciesResponse = await fetch(data.species.url);
+                    const speciesData = await speciesResponse.json();
+                    const englishEntry = speciesData.flavor_text_entries.find(
+                        entry => entry.language.name === 'en'
+                    );
 
-    if (!pokemonData) return null;
+                    if (englishEntry) {
+                        setDescription(englishEntry.flavor_text.replace(/[\n\f]/g, ' '));
+                    }
+                } catch (speciesError) {
+                    console.error("Error fetching species data:", speciesError);
+                }
+
+                setLoading(false);
+            } catch (error) {
+                console.error("Error fetching Pokémon details:", error);
+                setLoading(false);
+            }
+        };
+
+        fetchPokemonDetails();
+    }, [pokemon]);
+
+    if (loading) {
+        return (
+            <div className="card pokemon-card shadow-sm h-100">
+                <div className="card-body d-flex justify-content-center align-items-center" style={{ minHeight: "250px" }}>
+                    <div className="spinner-border" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!pokemonData) {
+        return (
+            <div className="card pokemon-card shadow-sm h-100">
+                <div className="card-body text-center" style={{ minHeight: "250px" }}>
+                    <p className="text-danger">Failed to load Pokémon data</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div
-            style={styles.card}
-            onClick={onClick}
-        >
-            <img
-                src={pokemonData.sprites?.front_default}
-                alt={pokemon.name}
-                style={styles.image}
-            />
-            <h2 style={styles.name}>{pokemon.name.toUpperCase()}</h2>
-            <p style={styles.description}>
-                {pokemonData.flavorText}
-            </p>
-            <div style={styles.types}>
-                <strong>Types:</strong>
-                {pokemonData.types?.map((typeName) => (
-                    <div key={typeName} style={styles.type}>
-                        <img
-                            src={getTypeIconUrl(typeName)}
-                            alt={typeName}
-                            style={styles.typeIcon}
-                        />
-                    </div>
-                ))}
+        <div className="card pokemon-card h-100 shadow-sm hover-shadow transition">
+            <div className="card-header bg-light text-center d-flex justify-content-between align-items-center">
+                <span className="badge bg-secondary">#{pokemonData.id.toString().padStart(3, '0')}</span>
+                <span className="text-muted small">
+                    {pokemonData.weight / 10}kg / {pokemonData.height / 10}m
+                </span>
             </div>
-            <p style={styles.stats}>
-                <strong>Stats:</strong>
-                {pokemonData.stats?.map((stat) => (
-                    <span style={styles.stat} key={stat.stat.name}>
-            {stat.stat.name}: {stat.base_stat}{" "}
-          </span>
-                ))}
-            </p>
+            <div className="card-body text-center">
+                <div className="pokemon-image-container mb-2">
+                    {pokemonData.sprites.front_default ? (
+                        <img
+                            src={pokemonData.sprites.front_default}
+                            alt={pokemonData.name}
+                            className="img-fluid pokemon-image"
+                            loading="lazy"
+                        />
+                    ) : (
+                        <div className="no-image-placeholder">
+                            <i className="bi bi-question-circle-fill"></i>
+                        </div>
+                    )}
+                </div>
+                <h5 className="card-title fw-bold mb-2">
+                    {pokemonData.name.charAt(0).toUpperCase() + pokemonData.name.slice(1)}
+                </h5>
+                {description && (
+                    <div className="description-container">
+                        <p className="card-text small text-muted mb-3 description-text">
+                            {description}
+                        </p>
+                    </div>
+                )}
+
+                <div className="d-flex justify-content-center gap-2 mb-2">
+                    {pokemonData.types.map((type) => (
+                        <span
+                            key={type.type.name}
+                            className="badge rounded-pill"
+                            style={{
+                                backgroundColor: getTypeColor(type.type.name),
+                                color: "#fff"
+                            }}
+                        >
+                            {type.type.name.charAt(0).toUpperCase() + type.type.name.slice(1)}
+                        </span>
+                    ))}
+                </div>
+
+                <div className="stats-container small">
+                    <div className="row g-1 mt-2">
+                        {pokemonData.stats.slice(0, 3).map(stat => (
+                            <div key={stat.stat.name} className="col-4">
+                                <div className="stat-box p-1 rounded">
+                                    <div className="stat-name text-uppercase small">
+                                        {stat.stat.name.replace('-', ' ')}
+                                    </div>
+                                    <div className="stat-value fw-bold">
+                                        {stat.base_stat}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
 
-const styles = {
-    card: {
-        border: "1px solid #ddd",
-        borderRadius: "8px",
-        padding: "10px",
-        textAlign: "center",
-        cursor: "pointer",
-        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-        transition: "transform 0.2s",
-        backgroundColor: "#fff",
-        maxWidth: "300px",
-        margin: "10px auto",
-    },
-    image: {
-        width: "100px",
-        height: "100px",
-        objectFit: "contain",
-    },
-    name: {
-        fontSize: "16px",
-        margin: "10px 0 5px",
-    },
-    description: {
-        fontSize: "14px",
-        color: "#555",
-        marginBottom: "10px",
-    },
-    types: {
-        display: "flex",
-        flexWrap: "wrap",
-        justifyContent: "center",
-        gap: "10px",
-        marginBottom: "10px",
-        fontSize: "14px",
-        color: "#333",
-    },
-    type: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#f0f0f0",
-        padding: "5px",
-        borderRadius: "8px",
-    },
-    typeIcon: {
-        width: "30px",
-        height: "30px",
-    },
-    stats: {
-        fontSize: "12px",
-        color: "#666",
-        textAlign: "left",
-    },
-    stat: {
-        display: "block",
-    },
+const getTypeColor = (type) => {
+    const typeColors = {
+        normal: "#A8A77A",
+        fire: "#EE8130",
+        water: "#6390F0",
+        electric: "#F7D02C",
+        grass: "#7AC74C",
+        ice: "#96D9D6",
+        fighting: "#C22E28",
+        poison: "#A33EA1",
+        ground: "#E2BF65",
+        flying: "#A98FF3",
+        psychic: "#F95587",
+        bug: "#A6B91A",
+        rock: "#B6A136",
+        ghost: "#735797",
+        dragon: "#6F35FC",
+        dark: "#705746",
+        steel: "#B7B7CE",
+        fairy: "#D685AD",
+        // Default color
+        default: "#777777"
+    };
+
+    return typeColors[type] || typeColors.default;
 };
+
 
 export default PokemonItem;
