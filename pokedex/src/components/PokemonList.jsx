@@ -56,21 +56,21 @@ const PokemonList = () => {
           );
         }
       }
-      if (typeCombination.firstType || typeCombination.secondType) {
-        const firstTypeResults = typeCombination.firstType
-            ? await fetchTypePokemon(typeCombination.firstType)
-            : filteredResults;
-
-        const secondTypeResults = typeCombination.secondType
-            ? await fetchTypePokemon(typeCombination.secondType)
-            : filteredResults;
-
-        filteredResults = filteredResults.filter(
-            (p) =>
-                firstTypeResults.some((typePokemon) => typePokemon.name === p.name) &&
-                secondTypeResults.some((typePokemon) => typePokemon.name === p.name)
-        );
-      }
+      // if (typeCombination.firstType || typeCombination.secondType) {
+      //   const firstTypeResults = typeCombination.firstType
+      //       ? await fetchTypePokemon(typeCombination.firstType)
+      //       : filteredResults;
+      //
+      //   const secondTypeResults = typeCombination.secondType
+      //       ? await fetchTypePokemon(typeCombination.secondType)
+      //       : filteredResults;
+      //
+      //   filteredResults = filteredResults.filter(
+      //       (p) =>
+      //           firstTypeResults.some((typePokemon) => typePokemon.name === p.name) &&
+      //           secondTypeResults.some((typePokemon) => typePokemon.name === p.name)
+      //   );
+      // }
       if (selectedEggGroup) {
         const response = await fetch(selectedEggGroup);
         const eggGroupData = await response.json();
@@ -146,7 +146,7 @@ const PokemonList = () => {
         <GenerationFilter onGenerationChange={handleGenerationChange} />
         <RegionFilter onRegionChange={handleRegionChange} />
         <EggGroupFilter onEggGroupChange={handleEggGroupChange} />
-        <TypeCombinationFilter onTypeCombinationChange={handleTypeCombinationChange} />
+     {/*   <TypeCombinationFilter onTypeCombinationChange={handleTypeCombinationChange} />*/}
 
         {/* Pokémon List */}
         {loading ? (
