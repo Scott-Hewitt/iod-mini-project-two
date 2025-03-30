@@ -230,35 +230,35 @@ const PokemonList = () => {
         <div className="row mb-4 g-3">
           <div className="col-12 col-md-3">
             <SearchFilter
+                onSearch={handleSearchChange}
                 value={searchValue}
-                onSearchChange={handleSearchChange}
             />
           </div>
           <div className="col-6 col-md-2">
             <TypeFilter
                 selectedType={selectedType}
-                onTypeChange={handleTypeChange}
+                onSelectType={handleTypeChange}
                 onFilterChange={handleFilterChange}
             />
           </div>
           <div className="col-6 col-md-2">
             <GenerationFilter
                 selectedGeneration={selectedGeneration}
-                onGenerationChange={handleGenerationChange}
+                onSelectGeneration={handleGenerationChange}
                 onFilterChange={handleFilterChange}
             />
           </div>
           <div className="col-6 col-md-2">
             <RegionFilter
                 selectedRegion={selectedRegion}
-                onRegionChange={handleRegionChange}
+                onSelectRegion={handleRegionChange}
                 onFilterChange={handleFilterChange}
             />
           </div>
           <div className="col-6 col-md-3">
             <EggGroupFilter
                 selectedEggGroup={selectedEggGroup}
-                onEggGroupChange={handleEggGroupChange}
+                onSelectEggGroup={handleEggGroupChange}
                 onFilterChange={handleFilterChange}
             />
           </div>
@@ -266,8 +266,8 @@ const PokemonList = () => {
 
         {hasActiveFilters && (
             <FilterTags
-                filters={activeFilters}
-                onRemoveFilter={removeFilter}
+                activeFilters={activeFilters}
+                onClearFilter={removeFilter}
                 onClearAll={clearAllFilters}
             />
         )}
