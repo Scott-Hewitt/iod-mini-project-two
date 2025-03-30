@@ -23,7 +23,7 @@ const PokemonList = () => {
       <div>
         <h1>Pokedex</h1>
         <div style={styles.gridContainer}>
-          {pokemonList.map((pokemon, index) => (
+          {pokemonList?.map((pokemon, index) => (
               <PokemonItem
                   key={index}
                   pokemon={pokemon}
@@ -32,11 +32,19 @@ const PokemonList = () => {
           ))}
         </div>
 
-
         {selectedPokemon && (
             <div style={styles.detailsContainer}>
               <h2>{selectedPokemon.name.toUpperCase()}</h2>
-              <p>Base Experience: {selectedPokemon.base_experience}</p>
+              <p><strong>Flavor Text:</strong> {selectedPokemon.flavorText}</p>
+              <p><strong>Types:</strong> {selectedPokemon.types.join(", ")}</p>
+              <p><strong>Stats:</strong></p>
+              <ul>
+                {selectedPokemon.stats.map((stat) => (
+                    <li key={stat.stat.name}>
+                      {stat.stat.name}: {stat.base_stat}
+                    </li>
+                ))}
+              </ul>
               <img
                   src={selectedPokemon.sprites?.front_default}
                   alt={selectedPokemon.name}
@@ -59,6 +67,5 @@ const styles = {
     textAlign: "center",
   },
 };
-
 
 export default PokemonList;
