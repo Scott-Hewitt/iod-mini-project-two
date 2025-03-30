@@ -20,12 +20,10 @@ const Pagination = ({ currentPage, totalPages, paginate }) => {
             startPage = currentPage - 2;
             endPage = currentPage + 2;
         }
-
         const pageNumbers = [];
         for (let i = startPage; i <= endPage; i++) {
             pageNumbers.push(i);
         }
-
         return pageNumbers.map(number => (
             <li key={number} className={`page-item ${currentPage === number ? 'active' : ''}`}>
                 <button className="page-link" onClick={() => paginate(number)}>

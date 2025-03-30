@@ -56,5 +56,4 @@ const EggGroupFilter = ({ selectedEggGroup, onSelectEggGroup, onFilterChange }) 
         </div>
     );
 };
-
 export default EggGroupFilter;
