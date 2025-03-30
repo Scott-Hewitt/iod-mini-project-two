@@ -1,36 +1,27 @@
 import React from "react";
 
 const SearchFilter = ({ onSearch, value }) => {
-    const handleSearchChange = (e) => {
-        onSearch(e.target.value);
-    };
-
     return (
-        <div className="card filter-card h-100 border-0">
-            <div className="card-body">
-                <h5 className="card-title filter-label">Search Pokémon</h5>
-                <div className="input-group">
-                    <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Search by name or ID"
-                        value={value}
-                        onChange={handleSearchChange}
-                    />
-                    {value && (
-                        <button
-                            className="btn btn-outline-secondary"
-                            type="button"
-                            onClick={() => onSearch("")}
-                        >
-                            ×
-                        </button>
-                    )}
-                </div>
-                <small className="text-muted mt-2 d-block">
-                    Enter Pokémon name or ID number
-                </small>
-            </div>
+        <div className="input-group">
+      <span className="input-group-text bg-primary text-white">
+        <i className="bi bi-search"></i>
+      </span>
+            <input
+                type="text"
+                className="form-control"
+                placeholder="Search by name or Pokémon number..."
+                value={value}
+                onChange={(e) => onSearch(e.target.value)}
+            />
+            {value && (
+                <button
+                    className="btn btn-outline-secondary"
+                    type="button"
+                    onClick={() => onSearch("")}
+                >
+                    <i className="bi bi-x"></i>
+                </button>
+            )}
         </div>
     );
 };
