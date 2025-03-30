@@ -1,54 +1,87 @@
 import React, { useState, useEffect } from "react";
-import { fetchPokemonList, fetchPokemonDetails } from "../services/pokeApi.jsx";
+import { fetchPokemonList } from "../services/pokeApi.jsx";
 import PokemonItem from "./PokemonItem";
+import TypeFilter from "./TypeFilter";
+import GenerationFilter from "./GenerationFilter";
 
 const PokemonList = () => {
   const [pokemonList, setPokemonList] = useState([]);
-  const [selectedPokemon, setSelectedPokemon] = useState(null);
+  const [filteredPokemon, setFilteredPokemon] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const loadPokemon = async () => {
+      setLoading(true);
       const data = await fetchPokemonList(20);
       setPokemonList(data);
+      setFilteredPokemon(data);
+      setLoading(false);
     };
+
     loadPokemon();
   }, []);
 
-  const selectPokemon = async (url) => {
-    const data = await fetchPokemonDetails(url);
-    setSelectedPokemon(data);
+  const handleTypeChange = async (type) => {
+    if (!type) {
+      setFilteredPokemon(pokemonList);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(`https://pokeapi.co/api/v2/type/${type}`);
+      const data = await response.json();
+      const filteredPokemonData = data.pokemon.map((p) => ({
+        name: p.pokemon.name,
+        url: p.pokemon.url,
+      }));
+      setFilteredPokemon(filteredPokemonData);
+    } catch (error) {
+      console.error("Error filtering Pokémon by type:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerationChange = async (generationUrl) => {
+    if (!generationUrl) {
+      setFilteredPokemon(pokemonList);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(generationUrl);
+      const data = await response.json();
+      const filteredPokemonData = data.pokemon_species.map((species) => ({
+        name: species.name,
+        url: `https://pokeapi.co/api/v2/pokemon/${species.name}`,
+      }));
+      setFilteredPokemon(filteredPokemonData);
+    } catch (error) {
+      console.error("Error filtering Pokémon by generation:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
       <div>
         <h1>Pokedex</h1>
-        <div style={styles.gridContainer}>
-          {pokemonList?.map((pokemon, index) => (
-              <PokemonItem
-                  key={index}
-                  pokemon={pokemon}
-                  onClick={() => selectPokemon(pokemon.url)}
-              />
-          ))}
-        </div>
-
-        {selectedPokemon && (
-            <div style={styles.detailsContainer}>
-              <h2>{selectedPokemon.name.toUpperCase()}</h2>
-              <p><strong>Flavor Text:</strong> {selectedPokemon.flavorText}</p>
-              <p><strong>Types:</strong> {selectedPokemon.types.join(", ")}</p>
-              <p><strong>Stats:</strong></p>
-              <ul>
-                {selectedPokemon.stats.map((stat) => (
-                    <li key={stat.stat.name}>
-                      {stat.stat.name}: {stat.base_stat}
-                    </li>
-                ))}
-              </ul>
-              <img
-                  src={selectedPokemon.sprites?.front_default}
-                  alt={selectedPokemon.name}
-              />
+        <TypeFilter onTypeChange={handleTypeChange} />
+        <GenerationFilter onGenerationChange={handleGenerationChange} />
+        {loading ? (
+            <p>Loading Pokémon...</p>
+        ) : (
+            <div style={styles.gridContainer}>
+              {filteredPokemon.map((pokemon, index) => (
+                  <PokemonItem
+                      key={index}
+                      pokemon={pokemon}
+                  />
+              ))}
             </div>
         )}
       </div>
@@ -61,10 +94,6 @@ const styles = {
     gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
     gap: "20px",
     marginTop: "20px",
-  },
-  detailsContainer: {
-    marginTop: "20px",
-    textAlign: "center",
   },
 };
 

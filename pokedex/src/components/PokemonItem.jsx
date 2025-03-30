@@ -53,6 +53,7 @@ const PokemonItem = ({ pokemon, onClick }) => {
         </div>
     );
 };
+
 const styles = {
     card: {
         border: "1px solid #ddd",
