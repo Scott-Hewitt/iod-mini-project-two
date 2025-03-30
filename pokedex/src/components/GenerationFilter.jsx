@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from "react";
 
-const GenerationFilter = ({ onGenerationChange }) => {
+const GenerationFilter = ({ selectedGeneration, onSelectGeneration, onFilterChange }) => {
     const [generations, setGenerations] = useState([]);
-    const [selectedGeneration, setSelectedGeneration] = useState("");
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [displayName, setDisplayName] = useState("");
 
     useEffect(() => {
         const fetchGenerations = async () => {
+            setLoading(true);
             try {
                 const response = await fetch("https://pokeapi.co/api/v2/generation");
                 const data = await response.json();
-                setGenerations(data.results); // List of generations
-                setLoading(false);
+                setGenerations(data.results);
             } catch (error) {
                 console.error("Error fetching generations:", error);
+            } finally {
                 setLoading(false);
             }
         };
@@ -21,42 +22,42 @@ const GenerationFilter = ({ onGenerationChange }) => {
         fetchGenerations();
     }, []);
 
-    const handleGenerationChange = (event) => {
-        const generation = event.target.value;
-        setSelectedGeneration(generation);
-        onGenerationChange(generation);
-    };
+    useEffect(() => {
+        if (selectedGeneration && generations.length > 0) {
+            const gen = generations.find(g => g.url === selectedGeneration);
+            if (gen) {
+                const genNumber = gen.url.split("/")[6];
+                setDisplayName(`Generation ${genNumber}`);
+                onFilterChange("generation", `Generation ${genNumber}`, true);
+            }
+        } else {
+            setDisplayName("");
+            onFilterChange("generation", "", false);
+        }
+    }, [selectedGeneration, generations, onFilterChange]);
 
     return (
-        <div className="card filter-card h-100 border-0">
+        <div className="card h-100">
+            <div className="card-header bg-success text-white">
+                <i className="bi bi-clock-history me-2"></i>Generation
+            </div>
             <div className="card-body">
-                <h5 className="card-title filter-label">Generation Filter</h5>
-                {loading ? (
-                    <div className="d-flex justify-content-center">
-                        <div className="spinner-border spinner-border-sm" role="status">
-                            <span className="visually-hidden">Loading...</span>
-                        </div>
-                    </div>
-                ) : (
-                    <>
-                        <select
-                            className="form-select"
-                            value={selectedGeneration}
-                            onChange={handleGenerationChange}
-                            aria-label="Select Generation"
-                        >
-                            <option value="">All Generations</option>
-                            {generations.map((generation, index) => (
-                                <option key={generation.name} value={generation.url}>
-                                    {`Generation ${index + 1}`}
-                                </option>
-                            ))}
-                        </select>
-                        <small className="text-muted mt-2 d-block">
-                            Filter Pokémon by the game generation they were introduced in
-                        </small>
-                    </>
-                )}
+                <select
+                    className="form-select"
+                    value={selectedGeneration}
+                    onChange={(e) => onSelectGeneration(e.target.value)}
+                    disabled={loading}
+                >
+                    <option value="">All Generations</option>
+                    {generations.map((gen) => {
+                        const genNumber = gen.url.split("/")[6];
+                        return (
+                            <option key={gen.name} value={gen.url}>
+                                Generation {genNumber}
+                            </option>
+                        );
+                    })}
+                </select>
             </div>
         </div>
     );

@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { fetchPokemonList } from "../services/pokeApi.jsx";
+import React, { useState, useEffect, useCallback } from "react";
+import { fetchPokemonList, fetchPokemonByType, fetchPokemonByGeneration,
+  fetchPokemonByRegion, fetchPokemonByEggGroup } from "../services/pokeApi.jsx";
 import PokemonItem from "./PokemonItem";
 import TypeFilter from "./TypeFilter";
 import GenerationFilter from "./GenerationFilter";
 import RegionFilter from "./RegionFilter";
 import EggGroupFilter from "./EggGroupFilter";
 import SearchFilter from "./SearchFilter";
+import FilterTags from "./FilterTags";
+import Pagination from "./Pagination";
 
 const PokemonList = () => {
   const [pokemonList, setPokemonList] = useState([]);
@@ -13,294 +16,300 @@ const PokemonList = () => {
   const [loading, setLoading] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeFilters, setActiveFilters] = useState(0);
-
   const [selectedType, setSelectedType] = useState("");
   const [selectedGeneration, setSelectedGeneration] = useState("");
   const [selectedRegion, setSelectedRegion] = useState("");
   const [selectedEggGroup, setSelectedEggGroup] = useState("");
   const [searchValue, setSearchValue] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const pokemonPerPage = 20;
+  const pokemonPerPage = 21;
+
+  const [activeFilters, setActiveFilters] = useState({
+    search: { active: false, label: "" },
+    type: { active: false, label: "" },
+    generation: { active: false, label: "" },
+    region: { active: false, label: "" },
+    eggGroup: { active: false, label: "" }
+  });
 
   useEffect(() => {
-    const loadPokemon = async () => {
+    const loadInitialPokemon = async () => {
+      setInitialLoading(true);
       try {
-        setInitialLoading(true);
-        const data = await fetchPokemonList(1025);
-        setPokemonList(data);
-        setFilteredPokemon(data);
+        const allPokemon = await fetchPokemonList();
+        setPokemonList(allPokemon);
+        setFilteredPokemon(allPokemon);
         setError(null);
       } catch (err) {
-        console.error("Error loading Pokémon:", err);
-        setError("Failed to load Pokémon data. Please try again later.");
+        setError("Failed to load Pokémon");
+        console.error("Error loading initial Pokémon list:", err);
       } finally {
         setInitialLoading(false);
+      }
+    };
+
+    loadInitialPokemon();
+  }, []);
+
+  useEffect(() => {
+    setActiveFilters((prev) => ({
+      ...prev,
+      search: {
+        active: searchValue !== "",
+        label: `Search: ${searchValue}`
+      }
+    }));
+    setCurrentPage(1);
+  }, [searchValue]);
+
+  const handleFilterChange = useCallback((filterType, label, active) => {
+    setActiveFilters(prev => ({
+      ...prev,
+      [filterType]: { active, label }
+    }));
+    setCurrentPage(1);
+  }, []);
+
+  useEffect(() => {
+    const applyFilters = async () => {
+      if (!pokemonList.length) return;
+
+      setLoading(true);
+      try {
+        let results = [...pokemonList];
+
+        if (selectedType) {
+          const typeFiltered = await fetchPokemonByType(selectedType);
+          const typeFilteredNames = new Set(typeFiltered.map(p => p.name));
+          results = results.filter(p => typeFilteredNames.has(p.name));
+        }
+
+        if (selectedGeneration) {
+          const genFiltered = await fetchPokemonByGeneration(selectedGeneration);
+          const genFilteredNames = new Set(genFiltered.map(p => p.name));
+          results = results.filter(p => genFilteredNames.has(p.name));
+        }
+
+        if (selectedRegion) {
+          const regionFiltered = await fetchPokemonByRegion(selectedRegion);
+          const regionFilteredNames = new Set(regionFiltered.map(p => p.name));
+          results = results.filter(p => regionFilteredNames.has(p.name));
+        }
+
+        if (selectedEggGroup) {
+          const eggGroupFiltered = await fetchPokemonByEggGroup(selectedEggGroup);
+          const eggGroupFilteredNames = new Set(eggGroupFiltered.map(p => p.name));
+          results = results.filter(p => eggGroupFilteredNames.has(p.name));
+        }
+
+        if (searchValue) {
+          const searchLower = searchValue.toLowerCase();
+          results = results.filter(pokemon => {
+            const idMatch = pokemon.url.match(/\/(\d+)\/$/);
+            const pokemonId = idMatch ? idMatch[1] : "";
+
+            return (
+                pokemon.name.toLowerCase().includes(searchLower) ||
+                pokemonId === searchValue
+            );
+          });
+        }
+
+        setFilteredPokemon(results);
+      } catch (err) {
+        console.error("Error applying filters:", err);
+        setError("Error filtering Pokémon");
+      } finally {
         setLoading(false);
       }
     };
 
-    loadPokemon();
-  }, []);
+    applyFilters();
+  }, [pokemonList, selectedType, selectedGeneration, selectedRegion, selectedEggGroup, searchValue]);
 
-  useEffect(() => {
-    let count = 0;
-    if (selectedType) count++;
-    if (selectedGeneration) count++;
-    if (selectedRegion) count++;
-    if (selectedEggGroup) count++;
-    if (searchValue) count++;
-    setActiveFilters(count);
+  const handleTypeChange = (type) => {
+    setSelectedType(type);
+    handleFilterChange("type", `Type: ${type}`, type !== "");
+  };
 
-    setCurrentPage(1);
-    applyFilters()
+  const handleGenerationChange = (generation) => {
+    setSelectedGeneration(generation);
+    handleFilterChange("generation", `Generation: ${generation}`, generation !== "");
+  };
 
-  }, [searchValue, selectedType, selectedGeneration, selectedRegion, selectedEggGroup]);
+  const handleRegionChange = (region) => {
+    setSelectedRegion(region);
+    handleFilterChange("region", `Region: ${region}`, region !== "");
+  };
 
-  useEffect(() => {
-    if (searchValue !== "") {
-      const delaySearch = setTimeout(() => {
-        applyFilters();
-      }, 500);
+  const handleEggGroupChange = (eggGroup) => {
+    setSelectedEggGroup(eggGroup);
+    handleFilterChange("eggGroup", `Egg Group: ${eggGroup}`, eggGroup !== "");
+  };
 
-      return () => clearTimeout(delaySearch);
-    }
-  }, [searchValue]);
+  const handleSearchChange = (value) => {
+    setSearchValue(value);
+  };
 
-  useEffect(() => {
-    if (selectedType || selectedGeneration || selectedRegion || selectedEggGroup) {
-      applyFilters();
-    }
-  }, [selectedType, selectedGeneration, selectedRegion, selectedEggGroup]);
-
-  const applyFilters = async () => {
-    setLoading(true);
-    setError(null);
-    let filteredResults = [...pokemonList];
-    if (searchValue && searchValue.trim() !== "") {
-      const searchLower = searchValue.toLowerCase().trim();
-
-      filteredResults = filteredResults.filter((pokemon) => {
-        const urlParts = pokemon.url.split('/');
-        const pokemonId = urlParts[urlParts.length - 2];
-
-        return (
-            pokemon.name.toLowerCase().includes(searchLower) ||
-            pokemonId.includes(searchLower)
-        );
-      });
-    }
-    try {
-      if (selectedGeneration) {
-        const response = await fetch(selectedGeneration);
-        const generationData = await response.json();
-        filteredResults = generationData.pokemon_species.map((species) => ({
-          name: species.name,
-          url: `https://pokeapi.co/api/v2/pokemon/${species.name}`,
-        }));
-      }
-
-      if (selectedRegion) {
-        const response = await fetch(selectedRegion);
-        const regionData = await response.json();
-        if (regionData.main_generation) {
-          const genResponse = await fetch(regionData.main_generation.url);
-          const genData = await genResponse.json();
-          const genPokemonNames = genData.pokemon_species.map(p => p.name);
-
-          filteredResults = filteredResults.filter((p) =>
-              genPokemonNames.includes(p.name)
-          );
-        }
-      }
-
-      if (selectedEggGroup) {
-        const response = await fetch(selectedEggGroup);
-        const eggGroupData = await response.json();
-        const eggGroupPokemonNames = eggGroupData.pokemon_species.map(p => p.name);
-
-        filteredResults = filteredResults.filter((p) =>
-            eggGroupPokemonNames.includes(p.name)
-        );
-      }
-
-      if (selectedType) {
-        const response = await fetch(selectedType);
-        const typeData = await response.json();
-        const typePokemons = typeData.pokemon.map((p) => ({
-          name: p.pokemon.name,
-          url: p.pokemon.url,
-        }));
-
-        filteredResults = filteredResults.filter((pokemon) =>
-            typePokemons.some((typePokemon) => typePokemon.name === pokemon.name)
-        );
-      }
-
-      setFilteredPokemon(filteredResults);
-    } catch (err) {
-      console.error("Error applying filters:", err);
-      setError("Failed to apply filters. Please try again later.");
-    } finally {
-      setLoading(false);
+  const removeFilter = (filterType) => {
+    switch (filterType) {
+      case "search":
+        setSearchValue("");
+        break;
+      case "type":
+        setSelectedType("");
+        handleFilterChange("type", "", false);
+        break;
+      case "generation":
+        setSelectedGeneration("");
+        handleFilterChange("generation", "", false);
+        break;
+      case "region":
+        setSelectedRegion("");
+        handleFilterChange("region", "", false);
+        break;
+      case "eggGroup":
+        setSelectedEggGroup("");
+        handleFilterChange("eggGroup", "", false);
+        break;
+      default:
+        break;
     }
   };
 
   const clearAllFilters = () => {
+    setSearchValue("");
     setSelectedType("");
     setSelectedGeneration("");
     setSelectedRegion("");
     setSelectedEggGroup("");
-    setSearchValue("");
-    setFilteredPokemon(pokemonList);
-    setActiveFilters(0);
+    setActiveFilters({
+      search: { active: false, label: "" },
+      type: { active: false, label: "" },
+      generation: { active: false, label: "" },
+      region: { active: false, label: "" },
+      eggGroup: { active: false, label: "" }
+    });
   };
-
   const indexOfLastPokemon = currentPage * pokemonPerPage;
   const indexOfFirstPokemon = indexOfLastPokemon - pokemonPerPage;
   const currentPokemon = filteredPokemon.slice(indexOfFirstPokemon, indexOfLastPokemon);
   const totalPages = Math.ceil(filteredPokemon.length / pokemonPerPage);
 
-  const paginate = (pageNumber) => {
-    if (pageNumber > 0 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
-      window.scrollTo(0, 0);
-    }
-  };
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  if (initialLoading) {
+    return (
+        <div className="container text-center py-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-3">Loading Pokémon data...</p>
+        </div>
+    );
+  }
+
+  if (error && !filteredPokemon.length) {
+    return (
+        <div className="container text-center py-5">
+          <i className="bi bi-exclamation-triangle text-warning fs-1"></i>
+          <p className="mt-3">{error}</p>
+          <button className="btn btn-primary" onClick={() => window.location.reload()}>
+            Try Again
+          </button>
+        </div>
+    );
+  }
+
+  const hasActiveFilters = Object.values(activeFilters).some(filter => filter.active);
 
   return (
-      <div className="container py-4">
-        <h1 className="text-center py-4 my-2">
-          <i className="bi bi-circle-fill text-danger me-2" style={{ fontSize: "0.5em", verticalAlign: "middle" }}></i>
-          Pokédex
-          <i className="bi bi-circle-fill text-danger ms-2" style={{ fontSize: "0.5em", verticalAlign: "middle" }}></i>
-        </h1>
-
-        <div className="row mb-4">
-          <div className="col-md-12">
-            <SearchFilter onSearch={setSearchValue} value={searchValue} />
-          </div>
-        </div>
+      <div className="container-fluid py-4">
+        <h2 className="text-center mb-4">Pokémon Database</h2>
 
         <div className="row mb-4 g-3">
-          <div className="col-md-3">
-            <TypeFilter selectedType={selectedType} onSelectType={setSelectedType} />
+          <div className="col-12 col-md-3">
+            <SearchFilter
+                value={searchValue}
+                onSearchChange={handleSearchChange}
+            />
           </div>
-          <div className="col-md-3">
-            <GenerationFilter selectedGeneration={selectedGeneration} onSelectGeneration={setSelectedGeneration} />
+          <div className="col-6 col-md-2">
+            <TypeFilter
+                selectedType={selectedType}
+                onTypeChange={handleTypeChange}
+                onFilterChange={handleFilterChange}
+            />
           </div>
-          <div className="col-md-3">
-            <RegionFilter selectedRegion={selectedRegion} onSelectRegion={setSelectedRegion} />
+          <div className="col-6 col-md-2">
+            <GenerationFilter
+                selectedGeneration={selectedGeneration}
+                onGenerationChange={handleGenerationChange}
+                onFilterChange={handleFilterChange}
+            />
           </div>
-          <div className="col-md-3">
-            <EggGroupFilter selectedEggGroup={selectedEggGroup} onSelectEggGroup={setSelectedEggGroup} />
+          <div className="col-6 col-md-2">
+            <RegionFilter
+                selectedRegion={selectedRegion}
+                onRegionChange={handleRegionChange}
+                onFilterChange={handleFilterChange}
+            />
+          </div>
+          <div className="col-6 col-md-3">
+            <EggGroupFilter
+                selectedEggGroup={selectedEggGroup}
+                onEggGroupChange={handleEggGroupChange}
+                onFilterChange={handleFilterChange}
+            />
           </div>
         </div>
 
-        {activeFilters > 0 && (
-            <div className="d-flex justify-content-between align-items-center mb-4">
-              <div className="filters-info">
-                <span className="badge bg-primary me-2">{activeFilters} active filter(s)</span>
-                {selectedType && <span className="badge bg-info me-2">Type</span>}
-                {selectedGeneration && <span className="badge bg-success me-2">Generation</span>}
-                {selectedRegion && <span className="badge bg-warning me-2">Region</span>}
-                {selectedEggGroup && <span className="badge bg-danger me-2">Egg Group</span>}
-                {searchValue && <span className="badge bg-secondary me-2">Search</span>}
-              </div>
-              <button className="btn btn-outline-danger btn-sm" onClick={clearAllFilters}>
-                Clear All Filters <i className="bi bi-x-circle"></i>
-              </button>
-            </div>
+        {hasActiveFilters && (
+            <FilterTags
+                filters={activeFilters}
+                onRemoveFilter={removeFilter}
+                onClearAll={clearAllFilters}
+            />
         )}
 
-        {initialLoading ? (
-            <div className="text-center py-5">
+        {loading ? (
+            <div className="text-center py-4">
               <div className="spinner-border text-primary" role="status">
                 <span className="visually-hidden">Loading...</span>
               </div>
-              <p className="mt-3">Loading Pokémon data...</p>
-            </div>
-        ) : error ? (
-            <div className="alert alert-danger" role="alert">
-              <i className="bi bi-exclamation-triangle-fill me-2"></i>
-              {error}
+              <p className="mt-2">Applying filters...</p>
             </div>
         ) : (
             <>
-              {loading ? (
-                  <div className="text-center py-3">
-                    <div className="spinner-border spinner-border-sm text-primary" role="status">
-                      <span className="visually-hidden">Loading...</span>
-                    </div>
-                    <span className="ms-2">Applying filters...</span>
+              {filteredPokemon.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p>No Pokémon found matching your filters.</p>
+                    <button
+                        className="btn btn-outline-primary"
+                        onClick={clearAllFilters}
+                    >
+                      Clear all filters
+                    </button>
                   </div>
               ) : (
                   <>
-                    {filteredPokemon.length === 0 ? (
-                        <div className="alert alert-info" role="alert">
-                          <i className="bi bi-info-circle-fill me-2"></i>
-                          No Pokémon found with the selected filters. Try changing or clearing some filters.
-                        </div>
-                    ) : (
-                        <div className="mb-4">
-                          <p className="text-muted">
-                            <i className="bi bi-list-ul me-2"></i>
-                            Showing {indexOfFirstPokemon + 1}-{Math.min(indexOfLastPokemon, filteredPokemon.length)} of{" "}
-                            {filteredPokemon.length} results
-                          </p>
-                        </div>
-                    )}
+                    <p className="mb-3 text-muted">
+                      Showing {indexOfFirstPokemon + 1} - {Math.min(indexOfLastPokemon, filteredPokemon.length)} of {filteredPokemon.length} Pokémon
+                    </p>
 
-                    <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4">
+                    <div className="pokemon-grid">
                       {currentPokemon.map((pokemon) => (
-                          <div className="col" key={pokemon.name}>
+                          <div key={pokemon.name}>
                             <PokemonItem pokemon={pokemon} />
                           </div>
                       ))}
                     </div>
 
-                    {filteredPokemon.length > pokemonPerPage && (
-                        <nav className="mt-5">
-                          <ul className="pagination pagination-md justify-content-center">
-                            <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                              <button className="page-link" onClick={() => paginate(currentPage - 1)}>
-                                <i className="bi bi-chevron-left"></i>
-                              </button>
-                            </li>
-
-                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                              let pageNum;
-                              if (totalPages <= 5) {
-                                pageNum = i + 1;
-                              } else if (currentPage <= 3) {
-                                pageNum = i + 1;
-                                if (i === 4) pageNum = totalPages;
-                              } else if (currentPage >= totalPages - 2) {
-                                pageNum = totalPages - 4 + i;
-                                if (i === 0) pageNum = 1;
-                              } else {
-                                pageNum = currentPage - 2 + i;
-                                if (i === 0) pageNum = 1;
-                                if (i === 4) pageNum = totalPages;
-                              }
-
-                              return (
-                                  <li className={`page-item ${currentPage === pageNum ? "active" : ""}`} key={i}>
-                                    <button className="page-link" onClick={() => paginate(pageNum)}>
-                                      {pageNum}
-                                    </button>
-                                  </li>
-                              );
-                            })}
-
-                            <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-                              <button className="page-link" onClick={() => paginate(currentPage + 1)}>
-                                <i className="bi bi-chevron-right"></i>
-                              </button>
-                            </li>
-                          </ul>
-                        </nav>
-                    )}
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        paginate={paginate}
+                    />
                   </>
               )}
             </>

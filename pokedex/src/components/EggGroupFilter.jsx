@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from "react";
 
-const EggGroupFilter = ({ onEggGroupChange }) => {
+const EggGroupFilter = ({ selectedEggGroup, onSelectEggGroup, onFilterChange }) => {
     const [eggGroups, setEggGroups] = useState([]);
-    const [selectedEggGroup, setSelectedEggGroup] = useState("");
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         const fetchEggGroups = async () => {
+            setLoading(true);
             try {
-                const response = await fetch("https://pokeapi.co/api/v2/egg-group/");
+                const response = await fetch("https://pokeapi.co/api/v2/egg-group");
                 const data = await response.json();
                 setEggGroups(data.results);
-                setLoading(false);
             } catch (error) {
                 console.error("Error fetching egg groups:", error);
+            } finally {
                 setLoading(false);
             }
         };
@@ -21,42 +21,37 @@ const EggGroupFilter = ({ onEggGroupChange }) => {
         fetchEggGroups();
     }, []);
 
-    const handleEggGroupChange = (event) => {
-        const eggGroup = event.target.value;
-        setSelectedEggGroup(eggGroup);
-        onEggGroupChange(eggGroup);
-    };
+    useEffect(() => {
+        if (selectedEggGroup && eggGroups.length > 0) {
+            const group = eggGroups.find(g => g.url === selectedEggGroup);
+            if (group) {
+                const displayName = group.name.charAt(0).toUpperCase() + group.name.slice(1).replace("-", " ");
+                onFilterChange("eggGroup", displayName, true);
+            }
+        } else {
+            onFilterChange("eggGroup", "", false);
+        }
+    }, [selectedEggGroup, eggGroups, onFilterChange]);
 
     return (
-        <div className="card filter-card h-100 border-0">
+        <div className="card h-100">
+            <div className="card-header bg-danger text-white">
+                <i className="bi bi-egg-fill me-2"></i>Egg Group
+            </div>
             <div className="card-body">
-                <h5 className="card-title filter-label">Egg Group Filter</h5>
-                {loading ? (
-                    <div className="d-flex justify-content-center">
-                        <div className="spinner-border spinner-border-sm" role="status">
-                            <span className="visually-hidden">Loading...</span>
-                        </div>
-                    </div>
-                ) : (
-                    <>
-                        <select
-                            className="form-select"
-                            value={selectedEggGroup}
-                            onChange={handleEggGroupChange}
-                            aria-label="Select Egg Group"
-                        >
-                            <option value="">All Egg Groups</option>
-                            {eggGroups.map((eggGroup) => (
-                                <option key={eggGroup.name} value={eggGroup.url}>
-                                    {eggGroup.name.charAt(0).toUpperCase() + eggGroup.name.slice(1)}
-                                </option>
-                            ))}
-                        </select>
-                        <small className="text-muted mt-2 d-block">
-                            Filter Pokémon by their breeding egg group
-                        </small>
-                    </>
-                )}
+                <select
+                    className="form-select"
+                    value={selectedEggGroup}
+                    onChange={(e) => onSelectEggGroup(e.target.value)}
+                    disabled={loading}
+                >
+                    <option value="">All Egg Groups</option>
+                    {eggGroups.map((group) => (
+                        <option key={group.name} value={group.url}>
+                            {group.name.charAt(0).toUpperCase() + group.name.slice(1).replace("-", " ")}
+                        </option>
+                    ))}
+                </select>
             </div>
         </div>
     );

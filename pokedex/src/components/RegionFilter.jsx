@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from "react";
 
-const RegionFilter = ({ onRegionChange }) => {
+const RegionFilter = ({ selectedRegion, onSelectRegion, onFilterChange }) => {
     const [regions, setRegions] = useState([]);
-    const [selectedRegion, setSelectedRegion] = useState("");
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         const fetchRegions = async () => {
+            setLoading(true);
             try {
-                const response = await fetch("https://pokeapi.co/api/v2/region/");
+                const response = await fetch("https://pokeapi.co/api/v2/region");
                 const data = await response.json();
-                setRegions(data.results); // Array of regions
-                setLoading(false);
+                setRegions(data.results);
             } catch (error) {
                 console.error("Error fetching regions:", error);
+            } finally {
                 setLoading(false);
             }
         };
@@ -21,42 +21,37 @@ const RegionFilter = ({ onRegionChange }) => {
         fetchRegions();
     }, []);
 
-    const handleRegionChange = (event) => {
-        const region = event.target.value; // Region name or URL
-        setSelectedRegion(region);
-        onRegionChange(region);
-    };
+    useEffect(() => {
+        if (selectedRegion && regions.length > 0) {
+            const region = regions.find(r => r.url === selectedRegion);
+            if (region) {
+                const displayName = region.name.charAt(0).toUpperCase() + region.name.slice(1);
+                onFilterChange("region", displayName, true);
+            }
+        } else {
+            onFilterChange("region", "", false);
+        }
+    }, [selectedRegion, regions, onFilterChange]);
 
     return (
-        <div className="card filter-card h-100 border-0">
+        <div className="card h-100">
+            <div className="card-header bg-warning text-dark">
+                <i className="bi bi-geo-alt-fill me-2"></i>Region
+            </div>
             <div className="card-body">
-                <h5 className="card-title filter-label">Region Filter</h5>
-                {loading ? (
-                    <div className="d-flex justify-content-center">
-                        <div className="spinner-border spinner-border-sm" role="status">
-                            <span className="visually-hidden">Loading...</span>
-                        </div>
-                    </div>
-                ) : (
-                    <>
-                        <select
-                            className="form-select"
-                            value={selectedRegion}
-                            onChange={handleRegionChange}
-                            aria-label="Select Region"
-                        >
-                            <option value="">All Regions</option>
-                            {regions.map((region) => (
-                                <option key={region.name} value={region.url}>
-                                    {region.name.charAt(0).toUpperCase() + region.name.slice(1)}
-                                </option>
-                            ))}
-                        </select>
-                        <small className="text-muted mt-2 d-block">
-                            Filter Pokémon by their native region
-                        </small>
-                    </>
-                )}
+                <select
+                    className="form-select"
+                    value={selectedRegion}
+                    onChange={(e) => onSelectRegion(e.target.value)}
+                    disabled={loading}
+                >
+                    <option value="">All Regions</option>
+                    {regions.map((region) => (
+                        <option key={region.name} value={region.url}>
+                            {region.name.charAt(0).toUpperCase() + region.name.slice(1)}
+                        </option>
+                    ))}
+                </select>
             </div>
         </div>
     );

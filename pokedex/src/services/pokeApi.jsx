@@ -1,35 +1,84 @@
-const API_URL = "https://pokeapi.co/api/v2";
-
-export const fetchPokemonList = async (limit = 20, offset = 0) => {
+export const fetchPokemonList = async (limit = 1010) => {
   try {
-    const response = await fetch(
-        `${API_URL}/pokemon?limit=${limit}&offset=${offset}`
-    );
+    const response = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=${limit}`);
     const data = await response.json();
     return data.results;
   } catch (error) {
     console.error("Error fetching Pokémon list:", error);
-    return [];
+    throw error;
   }
 };
 
-export const fetchPokemonDetails = async (url) => {
+export const fetchPokemonByType = async (typeUrl) => {
   try {
-    const response = await fetch(url);
+    const response = await fetch(typeUrl);
     const data = await response.json();
-    const speciesResponse = await fetch(data.species.url);
+    return data.pokemon.map(p => p.pokemon);
+  } catch (error) {
+    console.error("Error fetching Pokémon by type:", error);
+    throw error;
+  }
+};
+
+export const fetchPokemonByGeneration = async (generationUrl) => {
+  try {
+    const response = await fetch(generationUrl);
+    const data = await response.json();
+    return data.pokemon_species;
+  } catch (error) {
+    console.error("Error fetching Pokémon by generation:", error);
+    throw error;
+  }
+};
+export const fetchPokemonSpecies = async (id) => {
+  try {
+    const response = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching Pokémon species:", error);
+    throw error;
+  }
+};
+
+export const fetchPokemonByRegion = async (regionUrl) => {
+  try {
+    const response = await fetch(regionUrl);
+    const regionData = await response.json();
+    const generationResponse = await fetch(regionData.main_generation.url);
+    const generationData = await generationResponse.json();
+
+    return generationData.pokemon_species;
+  } catch (error) {
+    console.error("Error fetching Pokémon by region:", error);
+    throw error;
+  }
+};
+
+export const fetchPokemonByEggGroup = async (eggGroupUrl) => {
+  try {
+    const response = await fetch(eggGroupUrl);
+    const data = await response.json();
+    return data.pokemon_species;
+  } catch (error) {
+    console.error("Error fetching Pokémon by egg group:", error);
+    throw error;
+  }
+};
+export const fetchPokemonWithDescription = async (id) => {
+  try {
+    const pokemonResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+    const pokemonData = await pokemonResponse.json();
+
+    const speciesResponse = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
     const speciesData = await speciesResponse.json();
 
     return {
-      ...data,
-      flavorText:
-          speciesData.flavor_text_entries.find(
-              (entry) => entry.language.name === "en"
-          )?.flavor_text || "No description available.",
-      types: data.types.map((typeInfo) => typeInfo.type.name),
+      pokemon: pokemonData,
+      species: speciesData
     };
   } catch (error) {
-    console.error("Error fetching Pokémon details:", error);
-    return {};
+    console.error("Error fetching complete Pokémon data:", error);
+    throw error;
   }
 };
