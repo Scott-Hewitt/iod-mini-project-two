@@ -112,103 +112,113 @@ const PokemonItem = ({ pokemon }) => {
         );
     }
 
-    // Main content with wider card layout
     return (
         <div className="flip-card-container">
-            <div
-                className={`flip-card pokemon-card hover-shadow ${isFlipped ? 'is-flipped' : ''}`}
-                onClick={handleCardFlip}
-            >
-                {/* Front of Card */}
-                <div className="flip-card-face flip-card-front card shadow-sm h-100">
-                    <div className={`card-header ${details.types && details.types[0] ? getTypeClass(details.types[0].type.name) : ''}`}>
-                        <h5 className="card-title mb-0">
-                            {details.name.charAt(0).toUpperCase() + details.name.slice(1)}{" "}
-                            <small className="text-muted">#{details.id}</small>
-                        </h5>
+            <div className={`flip-card ${isFlipped ? 'is-flipped' : ''}`} onClick={handleCardFlip}>
+                <div className="flip-card-face flip-card-front">
+                    <div className="pokedex-lights">
+                        <div className="pokedex-light pokedex-light-blue"></div>
+                        <div className="pokedex-light pokedex-light-red"></div>
+                        <div className="pokedex-light pokedex-light-yellow"></div>
                     </div>
-                    <div className="card-body d-flex flex-column">
+
+                    <div className="text-center top-button-container">
+                        <button
+                            className="pokedex-button pokedex-button-blue stats-button"
+                            onClick={(e) => { e.stopPropagation(); handleCardFlip(); }}
+                        >
+                            View Stats
+                        </button>
+                    </div>
+
+                    <div className="pokemon-display-screen">
+                        <div className="pokemon-id">#{details.id}</div>
                         <div className="pokemon-image-container">
                             <img
-                                src={details.sprites?.other?.['official-artwork']?.front_default || details.sprites?.front_default}
+                                src={details.sprites.other['official-artwork']?.front_default || details.sprites.front_default}
                                 alt={details.name}
                                 className="pokemon-image"
                             />
                         </div>
+                        <div className="pokemon-name">{details.name}</div>
 
-                        <div className="mt-3">
-                            <div className="d-flex justify-content-between">
-                                <span><strong>Height:</strong> {details.height / 10}m</span>
-                                <span><strong>Weight:</strong> {details.weight / 10}kg</span>
-                            </div>
-
-                            <div className="mt-2">
-                                <strong>Types:</strong>{" "}
-                                {details.types.map((typeInfo, index) => (
-                                    <span
-                                        key={index}
-                                        className={`badge me-1 ${getTypeClass(typeInfo.type.name)}`}
-                                    >
-                                        {typeInfo.type.name}
-                                    </span>
-                                ))}
-                            </div>
-
-                            <div className="description-container mt-3">
-                                <p className="description-text">
-                                    {getEnglishDescription()}
-                                </p>
-                            </div>
+                        <div className="d-flex gap-2 justify-content-center mb-2">
+                            {details.types.map(typeInfo => (
+                                <span
+                                    key={typeInfo.type.name}
+                                    className={`badge ${getTypeClass(typeInfo.type.name)}`}
+                                >
+                                {typeInfo.type.name}
+                            </span>
+                            ))}
+                        </div>
+                        <div className="mb-1 d-flex justify-content-center gap-3">
+                            <span><strong>Height:</strong> {(details.height / 10).toFixed(1)}m</span>
+                            <span><strong>Weight:</strong> {(details.weight / 10).toFixed(1)}kg</span>
                         </div>
 
-                        <div className="mt-auto text-center">
-                            <small className="text-muted">Click for stats</small>
+                        <div className="description-container">
+                            <p className="mb-0">{getEnglishDescription()}</p>
                         </div>
                     </div>
+
+                    <div className="pokedex-buttons"></div>
                 </div>
 
-                {/* Back of Card */}
-                <div className="flip-card-face flip-card-back card shadow-sm h-100">
-                    <div className={`card-header ${details.types && details.types[0] ? getTypeClass(details.types[0].type.name) : ''}`}>
-                        <h5 className="card-title mb-0">
-                            {details.name.charAt(0).toUpperCase() + details.name.slice(1)} Stats
-                        </h5>
+                <div className="flip-card-face flip-card-back">
+                    <div className="pokedex-lights">
+                        <div className="pokedex-light pokedex-light-red"></div>
+                        <div className="pokedex-light pokedex-light-green"></div>
                     </div>
-                    <div className="card-body d-flex flex-column">
-                        <h6 className="mb-3">Base Stats</h6>
+                    <div className="text-center top-button-container">
+                        <button
+                            className="pokedex-button"
+                            onClick={(e) => { e.stopPropagation(); handleCardFlip(); }}
+                        >
+                            Back to Info
+                        </button>
+                    </div>
+
+                    <div className="pokemon-display-screen compact-stats">
+                        <div className="pokemon-id">#{details.id}</div>
+                        <div className="pokemon-name">{details.name}</div>
+
+                        <div className="d-flex gap-2 justify-content-center mb-2">
+                            {details.types.map(typeInfo => (
+                                <span
+                                    key={typeInfo.type.name}
+                                    className={`badge ${getTypeClass(typeInfo.type.name)}`}
+                                >
+                                {typeInfo.type.name}
+                            </span>
+                            ))}
+                        </div>
+
                         <div className="stat-container">
-                            {details.stats.map((stat, index) => (
-                                <div key={index} className="stat-box mb-2">
-                                    <div className="d-flex justify-content-between">
-                                        <strong>{stat.stat.name.replace('-', ' ')}</strong>
-                                        <span>{stat.base_stat}</span>
+                            <h6 className="mb-1 stat-label">Base Stats</h6>
+                            {details.stats.map(stat => (
+                                <div key={stat.stat.name} className="mb-1">
+                                    <div className="d-flex justify-content-between align-items-center">
+                                        <span className="stat-label compact-label">{stat.stat.name.replace("-", " ").replace("special-", "sp. ")}</span>
+                                        <span className="stat-value">{stat.base_stat}</span>
                                     </div>
-                                    <div className="progress mt-1">
+                                    <div className="stat-progress compact-progress">
                                         <div
-                                            className={`progress-bar ${details.types && details.types[0] ? getTypeClass(details.types[0].type.name) : ''}`}
-                                            role="progressbar"
+                                            className={`stat-bar ${stat.base_stat > 70 ? 'bg-success' : stat.base_stat < 50 ? 'bg-danger' : 'bg-warning'}`}
                                             style={{ width: `${calculateStatPercentage(stat.base_stat)}%` }}
-                                            aria-valuenow={stat.base_stat}
-                                            aria-valuemin="0"
-                                            aria-valuemax="255"
                                         ></div>
                                     </div>
                                 </div>
                             ))}
                         </div>
+                    </div>
 
-                        <h6 className="mt-3 mb-2">Abilities</h6>
-                        <div className="mb-3">
-                            {details.abilities.map((ability, index) => (
-                                <span key={index} className="badge bg-secondary me-1 mb-1">
-                                    {ability.ability.name.replace('-', ' ')}
-                                </span>
-                            ))}
-                        </div>
+                    <div className="pokedex-buttons"></div>
 
-                        <div className="mt-auto text-center">
-                            <small className="text-muted">Click to go back</small>
-                        </div>
+                    <div className="pokedex-speaker">
+                        <div className="speaker-line"></div>
+                        <div className="speaker-line"></div>
+                        <div className="speaker-line"></div>
                     </div>
                 </div>
             </div>

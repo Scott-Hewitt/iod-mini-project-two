@@ -22,7 +22,7 @@ const PokemonList = () => {
   const [selectedEggGroup, setSelectedEggGroup] = useState("");
   const [searchValue, setSearchValue] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const pokemonPerPage = 21;
+  const pokemonPerPage = 20;
 
   const [activeFilters, setActiveFilters] = useState({
     search: { active: false, label: "" },
@@ -225,30 +225,40 @@ const PokemonList = () => {
 
   return (
       <div className="container-fluid py-4">
-        <h2 className="text-center mb-4">Pokémon Database</h2>
-
-        <div className="row mb-4 g-3">
-          <div className="col-12 col-md-3">
+        <h2 className="text-center mb-4">PokéDex</h2>
+        <div className="row mb-4">
+          <div className="col-md-6 mx-auto">
             <SearchFilter
                 onSearch={handleSearchChange}
                 value={searchValue}
             />
           </div>
-          <div className="col-6 col-md-2">
+        </div>
+
+        {hasActiveFilters && (
+            <FilterTags
+                activeFilters={activeFilters}
+                onClearFilter={removeFilter}
+                onClearAll={clearAllFilters}
+            />
+        )}
+
+        <div className="row mb-4 g-3">
+          <div className="col-6 col-md-3">
             <TypeFilter
                 selectedType={selectedType}
                 onSelectType={handleTypeChange}
                 onFilterChange={handleFilterChange}
             />
           </div>
-          <div className="col-6 col-md-2">
+          <div className="col-6 col-md-3">
             <GenerationFilter
                 selectedGeneration={selectedGeneration}
                 onSelectGeneration={handleGenerationChange}
                 onFilterChange={handleFilterChange}
             />
           </div>
-          <div className="col-6 col-md-2">
+          <div className="col-6 col-md-3">
             <RegionFilter
                 selectedRegion={selectedRegion}
                 onSelectRegion={handleRegionChange}
@@ -264,13 +274,6 @@ const PokemonList = () => {
           </div>
         </div>
 
-        {hasActiveFilters && (
-            <FilterTags
-                activeFilters={activeFilters}
-                onClearFilter={removeFilter}
-                onClearAll={clearAllFilters}
-            />
-        )}
 
         {loading ? (
             <div className="text-center py-4">

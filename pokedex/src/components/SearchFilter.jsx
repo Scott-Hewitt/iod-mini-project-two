@@ -3,9 +3,7 @@ import React from "react";
 const SearchFilter = ({ onSearch, value }) => {
     return (
         <div className="input-group">
-      <span className="input-group-text bg-primary text-white">
         <i className="bi bi-search"></i>
-      </span>
             <input
                 type="text"
                 className="form-control"
