@@ -181,7 +181,6 @@ body {
     right: 10px;
 }
 
-/* Control buttons */
 .pokedex-buttons {
     display: flex;
     justify-content: space-around;
@@ -189,7 +188,7 @@ body {
 }
 
 .pokedex-button {
-    background-color: #333;
+    background-color: #3b4cca;
     color: white;
     border: none;
     border-radius: 5px;
@@ -247,7 +246,7 @@ body {
 .pokemon-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 25px;
+    gap: 35px;
     padding: 20px;
 }
 
